@@ -97,7 +97,7 @@ void drawBlock(Block &block)
 
     for (Vector2 blockTile : blockTiles)
     {
-        // The y value is for the column
+        // The y value is for the column and the x value y for the row
         DrawRectangle(blockTile.y * CELL_SIZE + OFFSET, blockTile.x * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getCellColorByIndex(block.id));
     }
 }
@@ -120,7 +120,6 @@ void draw()
     EndDrawing();
 }
 
-// this will be our grid with 30 columns, 20 rows
 void printGrid()
 {
     for (int row = 0; row < TOTAL_ROWS; row++)
