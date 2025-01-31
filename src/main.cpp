@@ -19,6 +19,8 @@ typedef struct
     int id;
     std::map<int, std::vector<Vector2>> cells;
     int rotationState;
+    int columnOffset;
+    int rowOffset;
 } Block;
 
 Block lBlock;
@@ -28,37 +30,141 @@ Block oBlock;
 Block sBlock;
 Block tBlock;
 Block zBlock;
+Block currentBlock;
+Block nextBlock;
+
+std::vector<Block> blocks;
+
+double lastUpdateTime = 0;
+
+// method for control the speed that the snake has to move.
+bool eventTriggered(double interval)
+{
+    double currentTime = GetTime();
+
+    if (currentTime - lastUpdateTime >= interval)
+    {
+        lastUpdateTime = currentTime;
+
+        return true;
+    }
+
+    return false;
+}
+
+void moveBlock(Block &block, int rowsToMove, int columnsToMove)
+{
+    block.rowOffset += rowsToMove;
+    block.columnOffset += columnsToMove;
+}
+
+std::vector<Vector2> getCellPositions(Block &block)
+{
+    std::vector<Vector2> blockTiles = block.cells[block.rotationState];
+
+    std::vector<Vector2> movedTiles;
+    movedTiles.reserve(4);
+
+    for (Vector2 blockTile : blockTiles)
+    {
+        Vector2 newPosition = {blockTile.x + block.rowOffset, blockTile.y + block.columnOffset};
+        movedTiles.push_back(newPosition);
+    }
+
+    return movedTiles;
+}
+
+bool isCellOutside(int row, int column)
+{
+    if (row >= 0 && row < TOTAL_ROWS && column >= 0 && column < TOTAL_COLUMNS)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool isBlockOutside()
+{
+    std::vector<Vector2> blockTiles = getCellPositions(currentBlock);
+
+    for (Vector2 blockTile : blockTiles)
+    {
+        if (isCellOutside(blockTile.x, blockTile.y))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void undoRotation(Block &block)
+{
+    block.rotationState--;
+
+    if (block.rotationState == -1)
+    {
+        block.rotationState = block.cells.size() - 1;
+    }
+}
 
 void rotateBlock(Block &block)
 {
-    //the oBlock id 4 doesn't need to rotate.
-    if (block.id != 4 && block.rotationState < 3)
-    {
-        block.rotationState++;
-    }
-    else
+    block.rotationState++;
+
+    if (block.rotationState == (int)block.cells.size())
     {
         block.rotationState = 0;
     }
+
+    if (isBlockOutside())
+    {
+        undoRotation(block);
+    }
+    
 }
 
 void update(float deltaTime)
 {
     if (IsKeyPressed(KEY_W))
     {
-        rotateBlock(zBlock);
+        rotateBlock(currentBlock);
     }
 
-    if (IsKeyDown(KEY_S))
+    if (IsKeyPressed(KEY_D))
     {
+        moveBlock(currentBlock, 0, 1);
+
+        if (isBlockOutside())
+        {
+            moveBlock(currentBlock, 0, -1);
+        }
     }
 
-    if (IsKeyDown(KEY_D))
+    else if (IsKeyPressed(KEY_A))
     {
+        moveBlock(currentBlock, 0, -1);
+
+        if (isBlockOutside())
+        {
+            moveBlock(currentBlock, 0, 1);
+        }
     }
 
-    else if (IsKeyDown(KEY_A))
+    if (IsKeyPressed(KEY_S))
     {
+        moveBlock(currentBlock, 1, 0);
+
+        if (isBlockOutside())
+        {
+            moveBlock(currentBlock, -1, 0);
+        }
+    }
+
+    if (eventTriggered(0.5))
+    {
+        moveBlock(currentBlock, 1, 0);
     }
 }
 
@@ -93,7 +199,7 @@ void drawGrid()
 
 void drawBlock(Block &block)
 {
-    std::vector<Vector2> blockTiles = block.cells[block.rotationState];
+    std::vector<Vector2> blockTiles = getCellPositions(block);
 
     for (Vector2 blockTile : blockTiles)
     {
@@ -110,7 +216,7 @@ void draw()
 
     drawGrid();
 
-    drawBlock(zBlock);
+    drawBlock(currentBlock);
 
     if (isGamePaused)
     {
@@ -133,6 +239,22 @@ void printGrid()
     }
 }
 
+Block getRandomBlock()
+{
+
+    if (blocks.empty())
+    {
+        blocks = {lBlock, jBlock, oBlock, sBlock, tBlock, zBlock};
+    }
+
+    int randomIndex = GetRandomValue(0, blocks.size() - 1);
+
+    Block actualBlock = blocks[randomIndex];
+    blocks.erase(blocks.begin() + randomIndex);
+
+    return actualBlock;
+}
+
 void initializeBlocks()
 {
     // defining Blocks 4 rotations with a map id and vector2 2
@@ -141,6 +263,8 @@ void initializeBlocks()
     lBlock.cells[1] = {{0, 1}, {1, 1}, {2, 1}, {2, 2}};
     lBlock.cells[2] = {{1, 0}, {1, 1}, {1, 2}, {2, 0}};
     lBlock.cells[3] = {{0, 0}, {0, 1}, {1, 1}, {2, 1}};
+    // for all the block to start in the midle of the grid, I need to move to the (0, 3)
+    moveBlock(lBlock, 0, 3);
 
     jBlock.id = 2;
     jBlock.cells[0] = {{0, 0}, {1, 0}, {1, 1}, {1, 2}};
@@ -148,15 +272,21 @@ void initializeBlocks()
     jBlock.cells[2] = {{1, 0}, {1, 1}, {1, 2}, {2, 2}};
     jBlock.cells[3] = {{0, 1}, {1, 1}, {2, 0}, {2, 1}};
 
+    moveBlock(jBlock, 0, 3);
+
     iBlock.id = 3;
     iBlock.cells[0] = {{1, 0}, {1, 1}, {1, 2}, {1, 3}};
     iBlock.cells[1] = {{0, 2}, {1, 2}, {2, 2}, {3, 2}};
     iBlock.cells[2] = {{2, 0}, {2, 1}, {2, 2}, {2, 3}};
     iBlock.cells[3] = {{0, 1}, {1, 1}, {2, 1}, {3, 1}};
 
-    //I don't need roation with this block
+    moveBlock(iBlock, -1, 3);
+
+    // I don't need rotaion with this block
     oBlock.id = 4;
     oBlock.cells[0] = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+
+    moveBlock(oBlock, 0, 4);
 
     sBlock.id = 5;
     sBlock.cells[0] = {{0, 1}, {0, 2}, {1, 0}, {1, 1}};
@@ -164,17 +294,29 @@ void initializeBlocks()
     sBlock.cells[2] = {{1, 1}, {1, 2}, {2, 0}, {2, 1}};
     sBlock.cells[3] = {{0, 0}, {1, 0}, {1, 1}, {2, 1}};
 
+    moveBlock(sBlock, 0, 3);
+
     tBlock.id = 6;
     tBlock.cells[0] = {{0, 1}, {1, 0}, {1, 1}, {1, 2}};
     tBlock.cells[1] = {{0, 1}, {1, 1}, {1, 2}, {2, 1}};
     tBlock.cells[2] = {{1, 0}, {1, 1}, {1, 2}, {2, 1}};
     tBlock.cells[3] = {{0, 1}, {1, 0}, {1, 1}, {2, 1}};
 
+    moveBlock(tBlock, 0, 3);
+
     zBlock.id = 7;
     zBlock.cells[0] = {{0, 0}, {0, 1}, {1, 1}, {1, 2}};
     zBlock.cells[1] = {{0, 2}, {1, 1}, {1, 2}, {2, 1}};
     zBlock.cells[2] = {{1, 0}, {1, 1}, {2, 1}, {2, 2}};
     zBlock.cells[3] = {{0, 1}, {1, 0}, {1, 1}, {2, 0}};
+
+    moveBlock(zBlock, 0, 3);
+
+    blocks.reserve(6);
+    blocks = {lBlock, jBlock, oBlock, sBlock, tBlock, zBlock};
+
+    currentBlock = getRandomBlock();
+    nextBlock = getRandomBlock();
 }
 
 int main()
