@@ -7,12 +7,12 @@ const int TOTAL_ROWS = 20;
 const int TOTAL_COLUMNS = 10;
 const int CELL_SIZE = 30;
 
-bool isGamePaused;
+int grid[TOTAL_ROWS][TOTAL_COLUMNS];
 
 // need to add an offsetValue to properly show the grid cells.
 const int OFFSET = 1;
 
-int grid[TOTAL_ROWS][TOTAL_COLUMNS];
+bool isGamePaused;
 
 typedef struct
 {
@@ -37,7 +37,6 @@ std::vector<Block> blocks;
 
 double lastUpdateTime = 0;
 
-// method for control the speed that the snake has to move.
 bool eventTriggered(double interval)
 {
     double currentTime = GetTime();
@@ -50,12 +49,6 @@ bool eventTriggered(double interval)
     }
 
     return false;
-}
-
-void moveBlock(Block &block, int rowsToMove, int columnsToMove)
-{
-    block.rowOffset += rowsToMove;
-    block.columnOffset += columnsToMove;
 }
 
 std::vector<Vector2> getCellPositions(Block &block)
@@ -74,9 +67,9 @@ std::vector<Vector2> getCellPositions(Block &block)
     return movedTiles;
 }
 
-bool isCellOutside(int row, int column)
+bool isCellOutside(int cellRow, int cellColumn)
 {
-    if (row >= 0 && row < TOTAL_ROWS && column >= 0 && column < TOTAL_COLUMNS)
+    if (cellRow >= 0 && cellRow < TOTAL_ROWS && cellColumn >= 0 && cellColumn < TOTAL_COLUMNS)
     {
         return false;
     }
@@ -84,9 +77,9 @@ bool isCellOutside(int row, int column)
     return true;
 }
 
-bool isBlockOutside()
+bool isBlockOutside(Block &block)
 {
-    std::vector<Vector2> blockTiles = getCellPositions(currentBlock);
+    std::vector<Vector2> blockTiles = getCellPositions(block);
 
     for (Vector2 blockTile : blockTiles)
     {
@@ -118,11 +111,17 @@ void rotateBlock(Block &block)
         block.rotationState = 0;
     }
 
-    if (isBlockOutside())
+    if (isBlockOutside(block))
     {
         undoRotation(block);
     }
     
+}
+
+void moveBlock(Block &block, int rowsToMove, int columnsToMove)
+{
+    block.rowOffset += rowsToMove;
+    block.columnOffset += columnsToMove;
 }
 
 void update(float deltaTime)
@@ -136,7 +135,7 @@ void update(float deltaTime)
     {
         moveBlock(currentBlock, 0, 1);
 
-        if (isBlockOutside())
+        if (isBlockOutside(currentBlock))
         {
             moveBlock(currentBlock, 0, -1);
         }
@@ -146,105 +145,38 @@ void update(float deltaTime)
     {
         moveBlock(currentBlock, 0, -1);
 
-        if (isBlockOutside())
+        if (isBlockOutside(currentBlock))
         {
             moveBlock(currentBlock, 0, 1);
         }
     }
 
-    if (IsKeyPressed(KEY_S))
+    if (IsKeyDown(KEY_S))
     {
         moveBlock(currentBlock, 1, 0);
 
-        if (isBlockOutside())
+        if (isBlockOutside(currentBlock))
         {
             moveBlock(currentBlock, -1, 0);
         }
     }
 
-    if (eventTriggered(0.5))
+    if (eventTriggered(0.4))
     {
         moveBlock(currentBlock, 1, 0);
-    }
-}
 
-Color getCellColorByIndex(int index)
-{
-    const Color darkGrey = {26, 31, 40, 255};
-    const Color green = {47, 230, 23, 255};
-    const Color red = {232, 18, 18, 255};
-    const Color orange = {226, 116, 17, 255};
-    const Color yellow = {237, 234, 4, 255};
-    const Color purple = {166, 0, 247, 255};
-    const Color cyan = {21, 204, 209, 255};
-    const Color blue = {13, 64, 216, 255};
-
-    Color colors[] = {darkGrey, green, red, orange, yellow, purple, cyan, blue};
-
-    return colors[index];
-}
-
-void drawGrid()
-{
-    for (int row = 0; row < TOTAL_ROWS; row++)
-    {
-        for (int column = 0; column < TOTAL_COLUMNS; column++)
+        if (isBlockOutside(currentBlock))
         {
-            int cellValue = grid[row][column];
-
-            DrawRectangle(column * CELL_SIZE + OFFSET, row * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getCellColorByIndex(cellValue));
+            moveBlock(currentBlock, -1, 0);
         }
-    }
-}
-
-void drawBlock(Block &block)
-{
-    std::vector<Vector2> blockTiles = getCellPositions(block);
-
-    for (Vector2 blockTile : blockTiles)
-    {
-        // The y value is for the column and the x value y for the row
-        DrawRectangle(blockTile.y * CELL_SIZE + OFFSET, blockTile.x * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getCellColorByIndex(block.id));
-    }
-}
-
-void draw()
-{
-    BeginDrawing();
-
-    ClearBackground(BLACK);
-
-    drawGrid();
-
-    drawBlock(currentBlock);
-
-    if (isGamePaused)
-    {
-        DrawText("Game Paused", 220, 100, 80, WHITE);
-    }
-
-    EndDrawing();
-}
-
-void printGrid()
-{
-    for (int row = 0; row < TOTAL_ROWS; row++)
-    {
-        for (int column = 0; column < TOTAL_COLUMNS; column++)
-        {
-            std::cout << grid[row][column] << " ";
-        }
-
-        std::cout << std::endl;
     }
 }
 
 Block getRandomBlock()
 {
-
     if (blocks.empty())
     {
-        blocks = {lBlock, jBlock, oBlock, sBlock, tBlock, zBlock};
+        blocks = {lBlock, jBlock, iBlock, oBlock, sBlock, tBlock, zBlock};
     }
 
     int randomIndex = GetRandomValue(0, blocks.size() - 1);
@@ -312,11 +244,82 @@ void initializeBlocks()
 
     moveBlock(zBlock, 0, 3);
 
-    blocks.reserve(6);
-    blocks = {lBlock, jBlock, oBlock, sBlock, tBlock, zBlock};
+    blocks.reserve(7);
+    blocks = {lBlock, jBlock, iBlock, oBlock, sBlock, tBlock, zBlock};
 
     currentBlock = getRandomBlock();
     nextBlock = getRandomBlock();
+}
+
+void printGrid()
+{
+    for (int row = 0; row < TOTAL_ROWS; row++)
+    {
+        for (int column = 0; column < TOTAL_COLUMNS; column++)
+        {
+            std::cout << grid[row][column] << " ";
+        }
+
+        std::cout << std::endl;
+    }
+}
+
+Color getColorByIndex(int index)
+{
+    const Color darkGrey = {26, 31, 40, 255};
+    const Color green = {47, 230, 23, 255};
+    const Color red = {232, 18, 18, 255};
+    const Color orange = {226, 116, 17, 255};
+    const Color yellow = {237, 234, 4, 255};
+    const Color purple = {166, 0, 247, 255};
+    const Color cyan = {21, 204, 209, 255};
+    const Color blue = {13, 64, 216, 255};
+
+    Color colors[] = {darkGrey, green, red, orange, yellow, purple, cyan, blue};
+
+    return colors[index];
+}
+
+void drawGrid()
+{
+    for (int row = 0; row < TOTAL_ROWS; row++)
+    {
+        for (int column = 0; column < TOTAL_COLUMNS; column++)
+        {
+            int cellValue = grid[row][column];
+
+            DrawRectangle(column * CELL_SIZE + OFFSET, row * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getColorByIndex(cellValue));
+        }
+    }
+}
+
+void drawBlock(Block &block)
+{
+    std::vector<Vector2> blockTiles = getCellPositions(block);
+
+    for (Vector2 blockTile : blockTiles)
+    {
+        // The y value is for the column and the x value y for the row
+        DrawRectangle(blockTile.y * CELL_SIZE + OFFSET, blockTile.x * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getColorByIndex(block.id));
+    }
+}
+
+void draw()
+{
+    BeginDrawing();
+
+    ClearBackground(BLACK);
+
+    drawGrid();
+
+    drawBlock(currentBlock);
+
+    if (isGamePaused)
+    {
+        DrawText("Game Paused", 220, 100, 80, WHITE);
+    }
+
+    EndDrawing();
 }
 
 int main()
