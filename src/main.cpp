@@ -138,6 +138,56 @@ Block getRandomBlock()
     return actualBlock;
 }
 
+bool isRowFull(int rowToCheck)
+{
+    for (int column = 0; column < TOTAL_COLUMNS; column++)
+    {
+        if (grid[rowToCheck][column] == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void clearRow(int rowToClear)
+{
+    for (int column = 0; column < TOTAL_COLUMNS; column++)
+    {
+        grid[rowToClear][column] = 0;
+    }
+}
+
+void moveRowDown(int row, int totalRows)
+{
+    for (int column = 0; column < TOTAL_COLUMNS; column++)
+    {
+        grid[row + totalRows][column] = grid[row][column];
+        grid[row][column] = 0;
+    }
+}
+
+//This code does not move the clear row down.
+int clearFullRow()
+{
+    int completedRow = 0;
+    for (int row = TOTAL_ROWS - 1; row >= 0; row--)
+    {
+        if (isRowFull(row))
+        {
+            clearRow(row);
+            completedRow++;
+        }
+        else if (completedRow > 0)
+        {
+            moveRowDown(row, completedRow);
+        }
+
+        return completedRow;
+    }
+}
+
 void lockBlock(Block &block)
 {
     auto blockCells = getCellPositions(block);
@@ -151,6 +201,8 @@ void lockBlock(Block &block)
     // and then update the current and next blocks.
     block = nextBlock;
     nextBlock = getRandomBlock();
+
+    clearFullRow();
 }
 
 bool isCellEmpty(int rowToCheck, int columnToCheck)
@@ -159,10 +211,9 @@ bool isCellEmpty(int rowToCheck, int columnToCheck)
     {
         return true;
     }
-    
+
     return false;
 }
-
 
 bool blockFits(Block &block)
 {
@@ -175,7 +226,6 @@ bool blockFits(Block &block)
         {
             return false;
         }
-        
     }
 
     return true;
