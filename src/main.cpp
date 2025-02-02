@@ -102,6 +102,32 @@ void undoRotation(Block &block)
     }
 }
 
+bool isCellEmpty(int rowToCheck, int columnToCheck)
+{
+    if (grid[rowToCheck][columnToCheck] == 0)
+    {
+        return true;
+    }
+
+    return false;
+}
+
+bool blockFits(Block &block)
+{
+    auto blockCells = getCellPositions(block);
+
+    // I need to write in the grid the id of the block that I'm going to lock
+    for (Vector2 blockCell : blockCells)
+    {
+        if (!isCellEmpty(blockCell.x, blockCell.y))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void rotateBlock(Block &block)
 {
     block.rotationState++;
@@ -111,7 +137,7 @@ void rotateBlock(Block &block)
         block.rotationState = 0;
     }
 
-    if (isBlockOutside(block))
+    if (isBlockOutside(block) || !blockFits(currentBlock))
     {
         undoRotation(block);
     }
@@ -168,7 +194,6 @@ void moveRowDown(int row, int totalRows)
     }
 }
 
-//This code does not move the clear row down.
 int clearFullRow()
 {
     int completedRow = 0;
@@ -183,9 +208,9 @@ int clearFullRow()
         {
             moveRowDown(row, completedRow);
         }
-
-        return completedRow;
     }
+
+    return completedRow;
 }
 
 void lockBlock(Block &block)
@@ -203,32 +228,6 @@ void lockBlock(Block &block)
     nextBlock = getRandomBlock();
 
     clearFullRow();
-}
-
-bool isCellEmpty(int rowToCheck, int columnToCheck)
-{
-    if (grid[rowToCheck][columnToCheck] == 0)
-    {
-        return true;
-    }
-
-    return false;
-}
-
-bool blockFits(Block &block)
-{
-    auto blockCells = getCellPositions(block);
-
-    // I need to write in the grid the id of the block that I'm going to lock
-    for (Vector2 blockCell : blockCells)
-    {
-        if (!isCellEmpty(blockCell.x, blockCell.y))
-        {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 void update(float deltaTime)
