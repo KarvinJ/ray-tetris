@@ -18,6 +18,9 @@ bool isGameOver;
 
 Font font;
 
+Sound rotateSound;
+Sound clearRowSound;
+
 typedef struct
 {
     int id;
@@ -207,6 +210,7 @@ int clearFullRow()
         {
             clearRow(row);
             completedRow++;
+            PlaySound(clearRowSound);
         }
         else if (completedRow > 0)
         {
@@ -267,6 +271,7 @@ void update(float deltaTime)
     if (!isGameOver && IsKeyPressed(KEY_W))
     {
         rotateBlock(currentBlock);
+        PlaySound(rotateSound);
     }
 
     if (!isGameOver && IsKeyPressed(KEY_D))
@@ -479,13 +484,28 @@ int main()
 
     printGrid();
 
+    InitAudioDevice();
+
+    Sound pauseSound = LoadSound("assets/sounds/okay.wav");
+    clearRowSound = LoadSound("assets/sounds/clear.mp3");
+    rotateSound = LoadSound("assets/sounds/rotate.mp3");
+
+    Music music = LoadMusicStream("assets/music/music.mp3");
+
+    music.looping = true;
+
+    PlayMusicStream(music);
+
     while (!WindowShouldClose())
     {
+        UpdateMusicStream(music);
+
         float deltaTime = GetFrameTime();
 
         if (!isGameOver && IsKeyPressed(KEY_SPACE))
         {
             isGamePaused = !isGamePaused;
+            PlaySound(pauseSound);
         }
 
         if (!isGamePaused)
