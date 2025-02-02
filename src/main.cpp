@@ -10,10 +10,13 @@ const int CELL_SIZE = 30;
 int grid[TOTAL_ROWS][TOTAL_COLUMNS];
 
 // need to add an offsetValue to properly show the grid cells.
-const int OFFSET = 1;
+const int POSITION_OFFSET = 11;
+const int CELL_OFFSET = 1;
 
 bool isGamePaused;
 bool isGameOver;
+
+Font font;
 
 typedef struct
 {
@@ -231,7 +234,7 @@ void lockBlock(Block &block)
     {
         isGameOver = true;
     }
-    
+
     nextBlock = getRandomBlock();
 
     clearFullRow();
@@ -250,7 +253,7 @@ void initializeGrid()
 
 void update(float deltaTime)
 {
-    //to check if any key has been pressed.
+    // to check if any key has been pressed.
     int keyPressed = GetKeyPressed();
 
     if (isGameOver && keyPressed != 0)
@@ -260,7 +263,7 @@ void update(float deltaTime)
         currentBlock = getRandomBlock();
         nextBlock = getRandomBlock();
     }
-    
+
     if (!isGameOver && IsKeyPressed(KEY_W))
     {
         rotateBlock(currentBlock);
@@ -410,7 +413,7 @@ void drawGrid()
         {
             int cellValue = grid[row][column];
 
-            DrawRectangle(column * CELL_SIZE + OFFSET, row * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getColorByIndex(cellValue));
+            DrawRectangle(column * CELL_SIZE + POSITION_OFFSET, row * CELL_SIZE + POSITION_OFFSET, CELL_SIZE - CELL_OFFSET, CELL_SIZE - CELL_OFFSET, getColorByIndex(cellValue));
         }
     }
 }
@@ -422,29 +425,40 @@ void drawBlock(Block &block)
     for (Vector2 blockTile : blockTiles)
     {
         // The y value is for the column and the x value y for the row
-        DrawRectangle(blockTile.y * CELL_SIZE + OFFSET, blockTile.x * CELL_SIZE + OFFSET, CELL_SIZE - OFFSET, CELL_SIZE - OFFSET, getColorByIndex(block.id));
+        DrawRectangle(blockTile.y * CELL_SIZE + POSITION_OFFSET, blockTile.x * CELL_SIZE + POSITION_OFFSET, CELL_SIZE - CELL_OFFSET, CELL_SIZE - CELL_OFFSET, getColorByIndex(block.id));
     }
 }
+
+// It's always good to have a light and dark version of a color for ui purposes.
+const Color lightBlue = {59, 85, 162, 255};
+const Color darkBlue = {44, 44, 127, 255};
 
 void draw()
 {
     BeginDrawing();
-
-    ClearBackground(BLACK);
+    // we use the dark color version for the background
+    ClearBackground(darkBlue);
 
     drawGrid();
 
     drawBlock(currentBlock);
 
-    if (isGamePaused)
-    {
-        DrawText("Game Paused", 50, 10, 32, WHITE);
-    }
+    DrawTextEx(font, "Score", {365, 15}, 38, 2, WHITE);
+    DrawTextEx(font, "Next", {370, 175}, 38, 2, WHITE);
 
     if (isGameOver)
     {
-        DrawText("Game Over", 60, 50, 32, WHITE);
+        DrawTextEx(font, "Game Over", {320, 450}, 38, 2, WHITE);
     }
+
+    if (isGamePaused)
+    {
+        DrawTextEx(font, "Game Paused", {320, 450}, 30, 2, WHITE);
+    }
+
+    // we use the light color version for the ui elements.
+    DrawRectangleRounded({320, 55, 170, 60}, 0.3, 6, lightBlue);
+    DrawRectangleRounded({320, 215, 170, 180}, 0.3, 6, lightBlue);
 
     EndDrawing();
 }
@@ -453,8 +467,11 @@ int main()
 {
     // SCREEN_WIDTH 10 * 30 = 300
     // SCREEN_HEIGHT 20 * 30 = 600
-    InitWindow(TOTAL_COLUMNS * CELL_SIZE, TOTAL_ROWS * CELL_SIZE, "Tetris");
+    // need to give a extra offset of 200 width and 20 heigt for the ui
+    InitWindow(TOTAL_COLUMNS * CELL_SIZE + 200, TOTAL_ROWS * CELL_SIZE + 20, "Tetris");
     SetTargetFPS(60);
+
+    font = LoadFontEx("assets/fonts/monogram.ttf", 64, 0, 0);
 
     initializeGrid();
 
