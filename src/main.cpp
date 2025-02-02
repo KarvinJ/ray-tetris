@@ -115,61 +115,12 @@ void rotateBlock(Block &block)
     {
         undoRotation(block);
     }
-    
 }
 
 void moveBlock(Block &block, int rowsToMove, int columnsToMove)
 {
     block.rowOffset += rowsToMove;
     block.columnOffset += columnsToMove;
-}
-
-void update(float deltaTime)
-{
-    if (IsKeyPressed(KEY_W))
-    {
-        rotateBlock(currentBlock);
-    }
-
-    if (IsKeyPressed(KEY_D))
-    {
-        moveBlock(currentBlock, 0, 1);
-
-        if (isBlockOutside(currentBlock))
-        {
-            moveBlock(currentBlock, 0, -1);
-        }
-    }
-
-    else if (IsKeyPressed(KEY_A))
-    {
-        moveBlock(currentBlock, 0, -1);
-
-        if (isBlockOutside(currentBlock))
-        {
-            moveBlock(currentBlock, 0, 1);
-        }
-    }
-
-    if (IsKeyDown(KEY_S))
-    {
-        moveBlock(currentBlock, 1, 0);
-
-        if (isBlockOutside(currentBlock))
-        {
-            moveBlock(currentBlock, -1, 0);
-        }
-    }
-
-    if (eventTriggered(0.4))
-    {
-        moveBlock(currentBlock, 1, 0);
-
-        if (isBlockOutside(currentBlock))
-        {
-            moveBlock(currentBlock, -1, 0);
-        }
-    }
 }
 
 Block getRandomBlock()
@@ -185,6 +136,99 @@ Block getRandomBlock()
     blocks.erase(blocks.begin() + randomIndex);
 
     return actualBlock;
+}
+
+void lockBlock(Block &block)
+{
+    auto blockCells = getCellPositions(block);
+
+    // I need to write in the grid the id of the block that I'm going to lock
+    for (Vector2 blockCell : blockCells)
+    {
+        grid[(int)blockCell.x][(int)blockCell.y] = block.id;
+    }
+
+    // and then update the current and next blocks.
+    block = nextBlock;
+    nextBlock = getRandomBlock();
+}
+
+bool isCellEmpty(int rowToCheck, int columnToCheck)
+{
+    if (grid[rowToCheck][columnToCheck] == 0)
+    {
+        return true;
+    }
+    
+    return false;
+}
+
+
+bool blockFits(Block &block)
+{
+    auto blockCells = getCellPositions(block);
+
+    // I need to write in the grid the id of the block that I'm going to lock
+    for (Vector2 blockCell : blockCells)
+    {
+        if (!isCellEmpty(blockCell.x, blockCell.y))
+        {
+            return false;
+        }
+        
+    }
+
+    return true;
+}
+
+void update(float deltaTime)
+{
+    if (IsKeyPressed(KEY_W))
+    {
+        rotateBlock(currentBlock);
+    }
+
+    if (IsKeyPressed(KEY_D))
+    {
+        moveBlock(currentBlock, 0, 1);
+
+        if (isBlockOutside(currentBlock) || !blockFits(currentBlock))
+        {
+            moveBlock(currentBlock, 0, -1);
+        }
+    }
+
+    else if (IsKeyPressed(KEY_A))
+    {
+        moveBlock(currentBlock, 0, -1);
+
+        if (isBlockOutside(currentBlock) || !blockFits(currentBlock))
+        {
+            moveBlock(currentBlock, 0, 1);
+        }
+    }
+
+    if (IsKeyDown(KEY_S))
+    {
+        moveBlock(currentBlock, 1, 0);
+
+        if (isBlockOutside(currentBlock) || !blockFits(currentBlock))
+        {
+            moveBlock(currentBlock, -1, 0);
+            lockBlock(currentBlock);
+        }
+    }
+
+    if (eventTriggered(0.4))
+    {
+        moveBlock(currentBlock, 1, 0);
+
+        if (isBlockOutside(currentBlock) || !blockFits(currentBlock))
+        {
+            moveBlock(currentBlock, -1, 0);
+            lockBlock(currentBlock);
+        }
+    }
 }
 
 void initializeBlocks()
