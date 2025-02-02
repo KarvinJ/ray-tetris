@@ -446,6 +446,17 @@ void drawGrid()
     }
 }
 
+void drawBlock(Block &block, int offsetX, int offsetY)
+{
+    std::vector<Vector2> blockTiles = getCellPositions(block);
+
+    for (Vector2 blockTile : blockTiles)
+    {
+        // The y value is for the column and the x value y for the row
+        DrawRectangle(blockTile.y * CELL_SIZE + offsetX, blockTile.x * CELL_SIZE + offsetY, CELL_SIZE - CELL_OFFSET, CELL_SIZE - CELL_OFFSET, getColorByIndex(block.id));
+    }
+}
+
 void drawBlock(Block &block)
 {
     std::vector<Vector2> blockTiles = getCellPositions(block);
@@ -472,13 +483,31 @@ void draw()
     drawBlock(currentBlock);
 
     DrawTextEx(font, "Score", {365, 15}, 38, 2, WHITE);
-    DrawTextEx(font, "Next", {370, 175}, 38, 2, WHITE);
 
     // we use the light color version for the ui elements.
     DrawRectangleRounded({320, 55, 170, 60}, 0.3, 6, lightBlue);
     DrawTextEx(font, TextFormat("%i", score), {365, 65}, 38, 2, WHITE);
 
+    DrawTextEx(font, "Next", {370, 175}, 38, 2, WHITE);
     DrawRectangleRounded({320, 215, 170, 180}, 0.3, 6, lightBlue);
+
+
+    //I'm doing this check to correctly position the iBlock and the oBlock.
+    if (nextBlock.id == 3)
+    {
+        drawBlock(nextBlock, 255, 290);
+    }
+
+    else if (nextBlock.id == 4)
+    {
+        drawBlock(nextBlock, 255, 280);
+    }
+
+    else
+    {
+
+        drawBlock(nextBlock, 275, 270);
+    }
 
     if (isGameOver)
     {
@@ -541,5 +570,6 @@ int main()
         draw();
     }
 
+    CloseAudioDevice();
     CloseWindow();
 }
