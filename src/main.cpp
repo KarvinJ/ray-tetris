@@ -16,6 +16,12 @@ const int CELL_OFFSET = 1;
 bool isGamePaused;
 bool isGameOver;
 
+// 100 by 1 line clear
+// 300 by 2 line clear
+// 500 by 3 line clear
+// 1 point by each move down by the player.
+int score;
+
 Font font;
 
 Sound rotateSound;
@@ -241,7 +247,22 @@ void lockBlock(Block &block)
 
     nextBlock = getRandomBlock();
 
-    clearFullRow();
+    int totalClearRows = clearFullRow();
+
+    if (totalClearRows == 1)
+    {
+        score += 100;
+    }
+
+    else if (totalClearRows == 2)
+    {
+        score += 300;
+    }
+
+    else if (totalClearRows > 2)
+    {
+        score += 500;
+    }
 }
 
 void initializeGrid()
@@ -264,6 +285,7 @@ void update(float deltaTime)
     {
         initializeGrid();
         isGameOver = false;
+        score = 0;
         currentBlock = getRandomBlock();
         nextBlock = getRandomBlock();
     }
@@ -296,6 +318,7 @@ void update(float deltaTime)
 
     if (!isGameOver && IsKeyDown(KEY_S))
     {
+        score++;
         moveBlock(currentBlock, 1, 0);
 
         if (isBlockOutside(currentBlock) || !blockFits(currentBlock))
@@ -305,7 +328,7 @@ void update(float deltaTime)
         }
     }
 
-    if (!isGameOver && eventTriggered(0.4))
+    if (!isGameOver && eventTriggered(0.5))
     {
         moveBlock(currentBlock, 1, 0);
 
@@ -451,6 +474,12 @@ void draw()
     DrawTextEx(font, "Score", {365, 15}, 38, 2, WHITE);
     DrawTextEx(font, "Next", {370, 175}, 38, 2, WHITE);
 
+    // we use the light color version for the ui elements.
+    DrawRectangleRounded({320, 55, 170, 60}, 0.3, 6, lightBlue);
+    DrawTextEx(font, TextFormat("%i", score), {365, 65}, 38, 2, WHITE);
+
+    DrawRectangleRounded({320, 215, 170, 180}, 0.3, 6, lightBlue);
+
     if (isGameOver)
     {
         DrawTextEx(font, "Game Over", {320, 450}, 38, 2, WHITE);
@@ -460,10 +489,6 @@ void draw()
     {
         DrawTextEx(font, "Game Paused", {320, 450}, 30, 2, WHITE);
     }
-
-    // we use the light color version for the ui elements.
-    DrawRectangleRounded({320, 55, 170, 60}, 0.3, 6, lightBlue);
-    DrawRectangleRounded({320, 215, 170, 180}, 0.3, 6, lightBlue);
 
     EndDrawing();
 }
