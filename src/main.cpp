@@ -13,6 +13,7 @@ int grid[TOTAL_ROWS][TOTAL_COLUMNS];
 const int OFFSET = 1;
 
 bool isGamePaused;
+bool isGameOver;
 
 typedef struct
 {
@@ -225,19 +226,47 @@ void lockBlock(Block &block)
 
     // and then update the current and next blocks.
     block = nextBlock;
+
+    if (!blockFits(block))
+    {
+        isGameOver = true;
+    }
+    
     nextBlock = getRandomBlock();
 
     clearFullRow();
 }
 
+void initializeGrid()
+{
+    for (int row = 0; row < TOTAL_ROWS; row++)
+    {
+        for (int column = 0; column < TOTAL_COLUMNS; column++)
+        {
+            grid[row][column] = 0;
+        }
+    }
+}
+
 void update(float deltaTime)
 {
-    if (IsKeyPressed(KEY_W))
+    //to check if any key has been pressed.
+    int keyPressed = GetKeyPressed();
+
+    if (isGameOver && keyPressed != 0)
+    {
+        initializeGrid();
+        isGameOver = false;
+        currentBlock = getRandomBlock();
+        nextBlock = getRandomBlock();
+    }
+    
+    if (!isGameOver && IsKeyPressed(KEY_W))
     {
         rotateBlock(currentBlock);
     }
 
-    if (IsKeyPressed(KEY_D))
+    if (!isGameOver && IsKeyPressed(KEY_D))
     {
         moveBlock(currentBlock, 0, 1);
 
@@ -247,7 +276,7 @@ void update(float deltaTime)
         }
     }
 
-    else if (IsKeyPressed(KEY_A))
+    else if (!isGameOver && IsKeyPressed(KEY_A))
     {
         moveBlock(currentBlock, 0, -1);
 
@@ -257,7 +286,7 @@ void update(float deltaTime)
         }
     }
 
-    if (IsKeyDown(KEY_S))
+    if (!isGameOver && IsKeyDown(KEY_S))
     {
         moveBlock(currentBlock, 1, 0);
 
@@ -268,7 +297,7 @@ void update(float deltaTime)
         }
     }
 
-    if (eventTriggered(0.4))
+    if (!isGameOver && eventTriggered(0.4))
     {
         moveBlock(currentBlock, 1, 0);
 
@@ -409,7 +438,12 @@ void draw()
 
     if (isGamePaused)
     {
-        DrawText("Game Paused", 220, 100, 80, WHITE);
+        DrawText("Game Paused", 50, 10, 32, WHITE);
+    }
+
+    if (isGameOver)
+    {
+        DrawText("Game Over", 60, 50, 32, WHITE);
     }
 
     EndDrawing();
@@ -422,14 +456,7 @@ int main()
     InitWindow(TOTAL_COLUMNS * CELL_SIZE, TOTAL_ROWS * CELL_SIZE, "Tetris");
     SetTargetFPS(60);
 
-    // initialize grid
-    for (int row = 0; row < TOTAL_ROWS; row++)
-    {
-        for (int column = 0; column < TOTAL_COLUMNS; column++)
-        {
-            grid[row][column] = 0;
-        }
-    }
+    initializeGrid();
 
     initializeBlocks();
 
@@ -439,7 +466,7 @@ int main()
     {
         float deltaTime = GetFrameTime();
 
-        if (IsKeyPressed(KEY_SPACE))
+        if (!isGameOver && IsKeyPressed(KEY_SPACE))
         {
             isGamePaused = !isGamePaused;
         }
