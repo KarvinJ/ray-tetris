@@ -66,10 +66,11 @@ bool eventTriggered(double interval)
 
 std::vector<Vector2> getCellPositions(Block &block)
 {
-    std::vector<Vector2> blockTiles = block.cells[block.rotationState];
+    //getting the reference of the vector instead of copying to create a new one.
+    std::vector<Vector2>& blockTiles = block.cells[block.rotationState];
 
     std::vector<Vector2> movedTiles;
-    movedTiles.reserve(4);
+    movedTiles.reserve(blockTiles.size());
 
     for (Vector2 blockTile : blockTiles)
     {
